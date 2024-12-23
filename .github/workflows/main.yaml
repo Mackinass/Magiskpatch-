@@ -15,11 +15,11 @@ jobs:
 
     - name: Download OTA update
       run: |
-        wget -O ota.zip <URL_OF_OTA_UPDATE>
+        wget -O ota.zip https://dl.google.com/developers/android/baklava/images/factory/bluejay_beta-bp21.241121.009-factory-cf5e025e.zip
 
     - name: Install Magisk
       run: |
-        wget -O magisk.apk <URL_OF_MAGISK_APK>
+        wget -O magisk.apk https://github.com/topjohnwu/Magisk/releases/download/v28.1/Magisk-v28.1.apk
         unzip magisk.apk -d magisk
 
     - name: Patch OTA with Magisk
