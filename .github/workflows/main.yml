@@ -162,7 +162,7 @@ jobs:
         id: armcmd
         with:
           arch: aarch64
-          distro: ubuntu20.04
+          distro: ubuntu24.04
           shell: /bin/bash
           
           run: |
@@ -188,7 +188,7 @@ jobs:
   release_img:
     name: Deploy to Releases
     needs: patch_img
-    runs-on: ubuntu-latest
+    runs-on: ubuntu24.04
     steps:
       - uses: actions/checkout@v2
      
