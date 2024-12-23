@@ -1,7 +1,11 @@
-{
-	"name": "crosshatch",
-	"build_number": "SP1A.210812.015",
-	"link": "https://dl.google.com/dl/android/aosp/crosshatch-sp1a.210812.015-factory-6dae03f8.zip",
-	"checksum": "6dae03f8e91644f6ee0b9e872faaee2b43312c490f05934940c68074dced303a",
-	"magisk": "https://github.com/topjohnwu/Magisk/releases/download/v23.0/Magisk-v23.0.apk"
+{                                                                                   "name": "bluejay",
+        "build_number": "BP21.241121.009",
+        "link": "https://dl.google.com/developers/android/baklava/images/fa>
+        "checksum": "cf5e025ea269a767f40ce568453768aec23833eb7350762b7f3d7c>
+        "magisk": "https://github.com/topjohnwu/Magisk/releases/download/v2>
 }
+
+
+
+
+

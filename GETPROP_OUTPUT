@@ -1,6 +1,6 @@
 [ro.crypto.state]: [encrypted]
 [ro.build.ab_update]: [true]
-[ro.boot.slot_suffix]: [_a]
+[ro.boot.slot_suffix]: [_b]
 [init.svc.vold]: [running]
-[ro.build.version.sdk]: [30]
+[ro.build.version.sdk]: [35]
 [ro.product.cpu.abi]: [arm64-v8a]
