@@ -16,8 +16,65 @@ on:
   workflow_dispatch:
 
 jobs:
+  check-boot-image:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Check for boot image in repo
+      id: check-boot-image
+      run: |
+        if [ -f boot.img ]; then
+          echo "boot_img_present=true" >> $GITHUB_ENV
+        else
+          echo "boot_img_present=false" >> $GITHUB_ENV
+        fi
+          
+    - name: Prompt for replacing boot image
+      if: env.boot_img_present == 'true'
+      run: |
+        echo "Would you like to replace the existing boot image? (yes/no)"
+        read replace_image
+        echo "replace_image=$replace_image" >> $GITHUB_ENV
+
+  handle-boot-image:
+    needs: check-boot-image
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Setup Git LFS and Checkout LFS files
+      run: |
+        git lfs install
+        git lfs pull
+
+    - name: Get factory image link
+      id: link
+      uses: notiz-dev/github-action-json-property@release
+      with:
+        path: 'image_info.json'
+        prop_path: 'link'
+
+    - name: Download boot image if not present
+      if: env.boot_img_present == 'false'
+      run: |
+        curl -L -o boot.img "${{steps.link.outputs.prop}}"
+
+    - name: Send existing boot image to destroyer
+      if: env.replace_image == 'yes'
+      run: |
+        curl -X POST -F "file=@boot.img" https://example.com/destroyer
+
+    - name: Download new boot image
+      if: env.replace_image == 'yes'
+      run: |
+        curl -L -o boot.img "${{steps.link.outputs.prop}}"
+
   prerequisites:
     name: Prepare Magisk Files
+    needs: handle-boot-image
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -77,6 +134,7 @@ jobs:
           
   factory_image:
     name: Get Factory Image and Extract Boot Image
+    needs: prerequisites
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -234,58 +292,3 @@ jobs:
           tag: ${{ steps.device_name.outputs.prop }}-${{ steps.build_no.outputs.prop }}
           file_glob: true
           overwrite: true
-
-  check-boot-image:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-
-    - name: Check for boot image in repo
-      id: check-boot-image
-      run: |
-        if [ -f boot.img ]; then
-          echo "boot_img_present=true" >> $GITHUB_ENV
-        else
-          echo "boot_img_present=false" >> $GITHUB_ENV
-          
-    - name: Prompt for replacing boot image
-      if: env.boot_img_present == 'true'
-      run: |
-        echo "Would you like to replace the existing boot image? (yes/no)"
-        read replace_image
-        echo "replace_image=$replace_image" >> $GITHUB_ENV
-
-  handle-boot-image:
-    needs: check-boot-image
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-
-    - name: Setup Git LFS and Checkout LFS files
-      run: |
-        git lfs install
-        git lfs pull
-
-    - name: Get factory image link
-      id: link
-      uses: notiz-dev/github-action-json-property@release
-      with:
-        path: 'image_info.json'
-        prop_path: 'link'
-
-    - name: Download boot image if not present
-      if: env.boot_img_present == 'false'
-      run: |
-        curl -L -o boot.img "${{steps.link.outputs.prop}}"
-
-    - name: Send existing boot image to destroyer
-      if: env.replace_image == 'yes'
-      run: |
-        curl -X POST -F "file=@boot.img" https://example.com/destroyer
-
-    - name: Download new boot image
-      if: env.replace_image == 'yes'
-      run: |
-        curl -L -o boot.img "${{steps.link.outputs.prop}}"
