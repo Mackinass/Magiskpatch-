@@ -51,25 +51,25 @@ jobs:
           args: -O Magisk.apk ${{steps.magisk.outputs.prop}}
           
       - name: Upload Magisk app to artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: magiskapp
           path: ./Magisk.apk
           
       - name: Upload boot script to artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: boot_script
           path: ./boot_patch.sh
           
       - name: Upload utility function script to artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: util_functions
           path: ./util_functions.sh
           
       - name: Upload addon.d script to artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: addond
           path: ./addon.d.sh
@@ -113,7 +113,7 @@ jobs:
             unzip factory_image/"${FOLDER_NAME}/image-${FOLDER_NAME}.zip"
             
       - name: Upload boot image to artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: boot_img_unpatched
           path: ./boot.img
@@ -124,7 +124,7 @@ jobs:
     needs: [prerequisites, factory_image]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       
       - name: Get Magisk app from artifacts
         uses: actions/download-artifact@v2
@@ -180,7 +180,7 @@ jobs:
             echo $(bash -c 'source ./get_property.sh && getprop ro.crypto.state')
             
       - name: Upload patched boot image
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: boot_img_patched
           path: ./new-boot.img
