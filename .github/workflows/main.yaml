@@ -1,162 +1,33 @@
-name: Create Boot Image
+name: Patch OTA with Magisk
 
 on:
   push:
-    branches: [ main ]
-    paths:
-      - image_info.json
-      - GETPROP_OUTPUT
-      - .github/workflows/main.yml
-  pull_request:
-    branches: [ main ]
-    paths:
-      - image_info.json
-      - GETPROP_OUTPUT
-      - .github/workflows/main.yml
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
-  prepare_files:
-    name: Prepare Files for Magisk
+  patch-ota:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-        with:
-          lfs: true  # Ensure Git LFS is enabled
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
-      - name: Get Magisk link
-        id: magisk
-        uses: notiz-dev/github-action-json-property@release
-        with:
-          path: 'image_info.json'
-          prop_path: 'magisk'
+    - name: Download OTA update
+      run: |
+        wget -O ota.zip <URL_OF_OTA_UPDATE>
 
-      - name: Download boot script
-        uses: wei/wget@v1
-        with:
-          args: https://raw.githubusercontent.com/topjohnwu/Magisk/master/scripts/boot_patch.sh
+    - name: Install Magisk
+      run: |
+        wget -O magisk.apk <URL_OF_MAGISK_APK>
+        unzip magisk.apk -d magisk
 
-      - name: Download utility function script
-        uses: wei/wget@v1
-        with:
-          args: https://raw.githubusercontent.com/topjohnwu/Magisk/master/scripts/util_functions.sh
-      
-      - name: Download addon.d script
-        uses: wei/wget@v1
-        with:
-          args: https://raw.githubusercontent.com/topjohnwu/Magisk/master/scripts/addon.d.sh
+    - name: Patch OTA with Magisk
+      run: |
+        java -jar magisk/magisk.jar patch ota.zip
 
-      - name: Download Magisk app
-        uses: wei/wget@v1
-        with:
-          args: -O Magisk.apk "${{steps.magisk.outputs.prop}}"
-
-      - name: Upload Magisk app to artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: magiskapp
-          path: ./Magisk.apk
-
-      - name: Upload boot script to artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: boot_script
-          path: ./boot_patch.sh
-
-      - name: Upload utility function script to artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: util_functions
-          path: ./util_functions.sh
-
-      - name: Upload addon.d script to artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: addond
-          path: ./addon.d.sh
-
-  factory_image:
-    name: Get Factory Image and Extract Boot Image
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          lfs: true  # Ensure Git LFS is enabled
-      
-      - name: Get factory image link
-        id: link
-        uses: notiz-dev/github-action-json-property@release
-        with:
-          path: 'image_info.json'
-          prop_path: 'link'
-          
-      - name: Download factory image
-        uses: wei/wget@v1
-        with:
-          args: -O factory_image.zip "${{steps.link.outputs.prop}}"
-          
-      - name: Get image build number
-        id: build_no
-        uses: notiz-dev/github-action-json-property@release
-        with:
-          path: 'image_info.json'
-          prop_path: 'build_number'
-          
-      - name: Unzip factory image
-        run: |
-          mkdir factory_image
-          unzip factory_image.zip -d factory_image
-
-      - name: Extract boot image
-        run: |
-          rm factory_image.zip || true  # Ignore error if the file doesn't exist.
-          export FOLDER_NAME=$(ls -h factory_image/ | grep -i "${{steps.build_no.outputs.prop}}")
-          echo "FOLDER_NAME=${FOLDER_NAME}" >> $GITHUB_ENV
-          unzip factory_image/"${FOLDER_NAME}/image-${FOLDER_NAME}.zip"
-
-      - name: Upload boot image to artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: boot_img_unpatched
-          path: ./boot.img
-
-  patch_img:
-    name: Gather Files and Start Patching
-    needs: [prepare_files, factory_image]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Get Magisk app from artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: magiskapp
-
-      - name: Get boot script from artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: boot_script
-
-      - name: Get utility function script from artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: util_functions
-
-      - name: Get addon.d script from artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: addond
-
-      - name: Get boot image from artifacts 
-        uses : actions/download-artifact@v3 
-        with : 
-            name : boot_img_unpatched 
-
-      # Unzip and patch the boot image using Magisk scripts here...
-
-  release_img:
-    name : Deploy to Releases 
-    needs : patch_img 
-    runs-on : ubuntu-latest 
-    steps :
-      # Steps for releasing the patched images...
+    - name: Upload patched image
+      uses: actions/upload-artifact@v2
+      with:
+        name: patched-ota
+        path: magisk/output/patched_image.img
