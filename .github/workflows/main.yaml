@@ -17,9 +17,21 @@ jobs:
       run: |
         wget -O ota.zip https://dl.google.com/developers/android/baklava/images/factory/bluejay_beta-bp21.241121.009-factory-cf5e025e.zip
 
-    - name: Install Magisk
+    - name: Verify OTA checksum
+      run: |
+        echo "cf5e025ea269a767f40ce568453768aec23833eb7350762b7f3d7c38babc0b7f ota.zip" | sha256sum -c -
+
+    - name: Download Magisk
       run: |
         wget -O magisk.apk https://github.com/topjohnwu/Magisk/releases/download/v28.1/Magisk-v28.1.apk
+
+    - name: Verify Magisk checksum
+      run: |
+        # Replace with the correct checksum for the Magisk APK
+        echo "<MAGISK_APK_CHECKSUM> magisk.apk" | sha256sum -c -
+
+    - name: Install Magisk
+      run: |
         unzip magisk.apk -d magisk
 
     - name: Patch OTA with Magisk
