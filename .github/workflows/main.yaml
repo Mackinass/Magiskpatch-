@@ -27,7 +27,7 @@ jobs:
         java -jar magisk/magisk.jar patch ota.zip
 
     - name: Upload patched image
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: patched-ota
         path: magisk/output/patched_image.img
