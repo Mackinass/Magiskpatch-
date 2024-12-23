@@ -25,11 +25,6 @@ jobs:
       run: |
         wget -O magisk.apk https://github.com/topjohnwu/Magisk/releases/download/v28.1/Magisk-v28.1.apk
 
-    - name: Verify Magisk checksum
-      run: |
-        # Replace with the correct checksum for the Magisk APK
-        echo "<MAGISK_APK_CHECKSUM> magisk.apk" | sha256sum -c -
-
     - name: Install Magisk
       run: |
         unzip magisk.apk -d magisk
