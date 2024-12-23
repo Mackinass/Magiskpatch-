@@ -1,27 +1,32 @@
 #!/bin/bash
 
-# Ubuntu does not have command `getprop`. Only android does.
-# This function is a simple implementation of getprop command, but
-# gets value from GETPROP_OUTPUT file. <- You should copy/paste it from your phone.
-# However is not fully implemented. Only shows property values when argument exists. 
-
+# Function to mimic Android's getprop command using GETPROP_OUTPUT file
 getprop() {
-	if [ -f GETPROP_OUTPUT ]; then
-		local prop_output=`cat GETPROP_OUTPUT`
-		if [ $# -eq 0 ]; then
-			# No specific property. Return whole getprop
-			echo "$prop_output"
-		else
-			local key="$1"
-			local key_value=`grep $key GETPROP_OUTPUT`
-			# IFS does not work in zsh!
-			IFS=':'
-			value=($key_value)
-			unset IFS
-			local result=${value[1]}
-			echo $result | sed 's/[][]//g'
-		fi
-	fi
+    # Check if GETPROP_OUTPUT exists
+    if [ ! -f GETPROP_OUTPUT ]; then
+        echo "Error: GETPROP_OUTPUT file not found."
+        return 1
+    fi
+
+    if [ $# -eq 0 ]; then
+        # No specific property requested, print entire file
+        cat GETPROP_OUTPUT
+    else
+        # Search for the specific property key
+        local key="$1"
+        local key_value=$(grep -w "$key" GETPROP_OUTPUT)
+        
+        if [ -z "$key_value" ]; then
+            # Key not found
+            echo "Error: Property '$key' not found."
+            return 1
+        fi
+
+        # Extract and clean up the value (removing brackets)
+        local value=$(echo "$key_value" | awk -F': ' '{print $2}' | tr -d '[]')
+        echo "$value"
+    fi
 }
 
+# Export the function so it can be used in subshells or scripts
 export -f getprop
