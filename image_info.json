@@ -1,11 +1,3 @@
-{                                                                                   "name": "bluejay",
-        "build_number": "BP21.241121.009",
-        "link": "https://dl.google.com/developers/android/baklava/images/fa>
-        "checksum": "cf5e025ea269a767f40ce568453768aec23833eb7350762b7f3d7c>
-        "magisk": "https://github.com/topjohnwu/Magisk/releases/download/v2>
-}
-
-
-
-
-
+version https://git-lfs.github.com/spec/v1
+oid sha256:11941a45479cc6f0b95ce295ac381d662a00d2c218c7b11f1729ce5344f21568
+size 384

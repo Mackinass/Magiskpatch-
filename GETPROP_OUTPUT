@@ -1,6 +1,3 @@
-[ro.crypto.state]: [encrypted]
-[ro.build.ab_update]: [true]
-[ro.boot.slot_suffix]: [_b]
-[init.svc.vold]: [running]
-[ro.build.version.sdk]: [35]
-[ro.product.cpu.abi]: [arm64-v8a]
+version https://git-lfs.github.com/spec/v1
+oid sha256:ce03a1af8c48f0b144d8da5e134f7d7ab790dd8bcd3d5c7927933dcec27ea213
+size 178
