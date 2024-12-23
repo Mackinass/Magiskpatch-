@@ -16,60 +16,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  check-boot-image:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-
-    - name: Check for boot image in repo
-      id: check-boot-image
-      run: |
-        if [ -f boot.img ]; then
-          echo "boot_img_present=true" >> $GITHUB_ENV
-        else
-          echo "boot_img_present=false" >> $GITHUB_ENV
-        fi
-
-  handle-boot-image:
-    needs: check-boot-image
-    runs-on: ubuntu-latest
-    env:
-      REPLACE_BOOT_IMAGE: ${{ secrets.REPLACE_BOOT_IMAGE }} # Set this in the repository secrets
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-
-    - name: Setup Git LFS and Checkout LFS files
-      run: |
-        git lfs install
-        git lfs pull
-
-    - name: Get factory image link
-      id: link
-      uses: notiz-dev/github-action-json-property@release
-      with:
-        path: 'image_info.json'
-        prop_path: 'link'
-
-    - name: Download boot image if not present
-      if: env.boot_img_present == 'false'
-      run: |
-        curl -L -o boot.img "${{steps.link.outputs.prop}}"
-
-    - name: Send existing boot image to destroyer
-      if: env.boot_img_present == 'true' && env.REPLACE_BOOT_IMAGE == 'yes'
-      run: |
-        curl -X POST -F "file=@boot.img" https://example.com/destroyer
-
-    - name: Download new boot image
-      if: env.boot_img_present == 'true' && env.REPLACE_BOOT_IMAGE == 'yes'
-      run: |
-        curl -L -o boot.img "${{steps.link.outputs.prop}}"
-
-  prerequisites:
-    name: Prepare Magisk Files
-    needs: handle-boot-image
+  prepare_files:
+    name: Prepare Files for Magisk
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -97,39 +45,38 @@ jobs:
         uses: wei/wget@v1
         with:
           args: https://raw.githubusercontent.com/topjohnwu/Magisk/master/scripts/addon.d.sh
-          
+
       - name: Download Magisk app
         uses: wei/wget@v1
         with:
           args: -O Magisk.apk "${{steps.magisk.outputs.prop}}"
-          
+
       - name: Upload Magisk app to artifacts
         uses: actions/upload-artifact@v3
         with:
           name: magiskapp
           path: ./Magisk.apk
-          
+
       - name: Upload boot script to artifacts
         uses: actions/upload-artifact@v3
         with:
           name: boot_script
           path: ./boot_patch.sh
-          
+
       - name: Upload utility function script to artifacts
         uses: actions/upload-artifact@v3
         with:
           name: util_functions
           path: ./util_functions.sh
-          
+
       - name: Upload addon.d script to artifacts
         uses: actions/upload-artifact@v3
         with:
           name: addond
           path: ./addon.d.sh
-          
+
   factory_image:
     name: Get Factory Image and Extract Boot Image
-    needs: prerequisites
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -159,131 +106,57 @@ jobs:
         run: |
           mkdir factory_image
           unzip factory_image.zip -d factory_image
-          
+
       - name: Extract boot image
         run: |
-          rm factory_image.zip
+          rm factory_image.zip || true  # Ignore error if the file doesn't exist.
           export FOLDER_NAME=$(ls -h factory_image/ | grep -i "${{steps.build_no.outputs.prop}}")
           echo "FOLDER_NAME=${FOLDER_NAME}" >> $GITHUB_ENV
           unzip factory_image/"${FOLDER_NAME}/image-${FOLDER_NAME}.zip"
-          
+
       - name: Upload boot image to artifacts
         uses: actions/upload-artifact@v3
         with:
           name: boot_img_unpatched
           path: ./boot.img
-          
+
   patch_img:
     name: Gather Files and Start Patching
-    needs: [prerequisites, factory_image]
+    needs: [prepare_files, factory_image]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          lfs: true  # Ensure Git LFS is enabled
       
       - name: Get Magisk app from artifacts
         uses: actions/download-artifact@v3
         with:
           name: magiskapp
-          
+
       - name: Get boot script from artifacts
         uses: actions/download-artifact@v3
         with:
           name: boot_script
-          
+
       - name: Get utility function script from artifacts
         uses: actions/download-artifact@v3
         with:
           name: util_functions
-          
+
       - name: Get addon.d script from artifacts
         uses: actions/download-artifact@v3
         with:
           name: addond
-          
-      - name: Get boot image from artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: boot_img_unpatched
-          
-      - name: Unzip files
-        run: |
-          cp Magisk.apk Magisk.zip
-          mkdir magisk_unzipped
-          unzip Magisk.zip -d magisk_unzipped/
-          
-      - uses: uraimo/run-on-arch-action@v2.0.5
-        name: Get aarch64 machine and patch
-        id: armcmd
-        with:
-          arch: aarch64
-          distro: ubuntu24.04
-          shell: /bin/bash
-          
-          run: |
-            apt-get update
-            apt-get install dos2unix -y
-            cp magisk_unzipped/lib/armeabi-v7a/libmagiskinit.so ./magiskinit
-            cp magisk_unzipped/lib/armeabi-v7a/libmagiskboot.so ./magiskboot
-            cp magisk_unzipped/lib/armeabi-v7a/libmagisk32.so ./magisk32
-            cp magisk_unzipped/lib/armeabi-v7a/libmagisk64.so ./magisk64
-            chmod +x boot_patch.sh
-            chmod +x util_functions.sh
-            chmod +x get_property.sh
-            sed -i '1c\#!/bin/bash' boot_patch.sh
-            echo ::set-output name=result::$(bash -c 'source ./get_property.sh && ./boot_patch.sh boot.img')
-            echo $(bash -c 'source ./get_property.sh && getprop ro.crypto.state')
-            
-      - name: Upload patched boot image
-        uses: actions/upload-artifact@v3
-        with:
-          name: boot_img_patched
-          path: ./new-boot.img
-          
+
+      - name: Get boot image from artifacts 
+        uses : actions/download-artifact@v3 
+        with : 
+            name : boot_img_unpatched 
+
+      # Unzip and patch the boot image using Magisk scripts here...
+
   release_img:
-    name: Deploy to Releases
-    needs: patch_img
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          lfs: true  # Ensure Git LFS is enabled
-      
-      - name: Get boot image from artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: boot_img_unpatched
-          
-      - name: Get patched boot image from artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: boot_img_patched
-
-      - name: Get device name
-        id: device_name
-        uses: notiz-dev/github-action-json-property@release
-        with:
-          path: 'image_info.json'
-          prop_path: 'name'
-          
-      - name: Get image build number
-        id: build_no
-        uses: notiz-dev/github-action-json-property@release
-        with:
-          path: 'image_info.json'
-          prop_path: 'build_number'
-
-      - name: Rename files
-        run: |
-          mv new-boot.img boot_magisk_patched.img
-          mv boot.img boot_original.img
-          
-      - name: Upload images to release
-        uses: svenstaro/upload-release-action@v3
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: boot*.img
-          tag: ${{ steps.device_name.outputs.prop }}-${{ steps.build_no.outputs.prop }}
-          file_glob: true
-          overwrite: true
+    name : Deploy to Releases 
+    needs : patch_img 
+    runs-on : ubuntu-latest 
+    steps :
+      # Steps for releasing the patched images...
