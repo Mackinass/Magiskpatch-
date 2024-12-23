@@ -13,7 +13,6 @@ on:
       - image_info.json
       - GETPROP_OUTPUT
       - .github/workflows/main.yml
-
   workflow_dispatch:
 
 jobs:
@@ -21,8 +20,10 @@ jobs:
     name: Prepare Magisk Files
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      
+      - uses: actions/checkout@v3
+        with:
+          lfs: true  # Ensure Git LFS is enabled
+
       - name: Get Magisk link
         id: magisk
         uses: notiz-dev/github-action-json-property@release
@@ -48,7 +49,7 @@ jobs:
       - name: Download Magisk app
         uses: wei/wget@v1
         with:
-          args: -O Magisk.apk ${{steps.magisk.outputs.prop}}
+          args: -O Magisk.apk "${{steps.magisk.outputs.prop}}"
           
       - name: Upload Magisk app to artifacts
         uses: actions/upload-artifact@v3
@@ -74,12 +75,13 @@ jobs:
           name: addond
           path: ./addon.d.sh
           
-          
   factory_image:
     name: Get Factory Image and Extract Boot Image
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        with:
+          lfs: true  # Ensure Git LFS is enabled
       
       - name: Get factory image link
         id: link
@@ -91,7 +93,7 @@ jobs:
       - name: Download factory image
         uses: wei/wget@v1
         with:
-          args: -O factory_image.zip ${{steps.link.outputs.prop}}
+          args: -O factory_image.zip "${{steps.link.outputs.prop}}"
           
       - name: Get image build number
         id: build_no
@@ -102,22 +104,21 @@ jobs:
           
       - name: Unzip factory image
         run: |
-            mkdir factory_image
-            unzip factory_image.zip -d factory_image
-            
+          mkdir factory_image
+          unzip factory_image.zip -d factory_image
+          
       - name: Extract boot image
         run: |
-            rm factory_image.zip
-            export FOLDER_NAME=$(ls -h factory_image/ | grep -i ${{steps.build_no.outputs.prop}})
-            echo "FOLDER_NAME=${FOLDER_NAME}" >> $GITHUB_ENV
-            unzip factory_image/"${FOLDER_NAME}/image-${FOLDER_NAME}.zip"
-            
+          rm factory_image.zip
+          export FOLDER_NAME=$(ls -h factory_image/ | grep -i "${{steps.build_no.outputs.prop}}")
+          echo "FOLDER_NAME=${FOLDER_NAME}" >> $GITHUB_ENV
+          unzip factory_image/"${FOLDER_NAME}/image-${FOLDER_NAME}.zip"
+          
       - name: Upload boot image to artifacts
         uses: actions/upload-artifact@v3
         with:
           name: boot_img_unpatched
           path: ./boot.img
-          
           
   patch_img:
     name: Gather Files and Start Patching
@@ -125,6 +126,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          lfs: true  # Ensure Git LFS is enabled
       
       - name: Get Magisk app from artifacts
         uses: actions/download-artifact@v3
@@ -153,9 +156,9 @@ jobs:
           
       - name: Unzip files
         run: |
-            cp Magisk.apk Magisk.zip
-            mkdir magisk_unzipped
-            unzip Magisk.zip -d magisk_unzipped/
+          cp Magisk.apk Magisk.zip
+          mkdir magisk_unzipped
+          unzip Magisk.zip -d magisk_unzipped/
           
       - uses: uraimo/run-on-arch-action@v2.0.5
         name: Get aarch64 machine and patch
@@ -188,10 +191,12 @@ jobs:
   release_img:
     name: Deploy to Releases
     needs: patch_img
-    runs-on: ubuntu24.04
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-     
+      - uses: actions/checkout@v3
+        with:
+          lfs: true  # Ensure Git LFS is enabled
+      
       - name: Get boot image from artifacts
         uses: actions/download-artifact@v3
         with:
@@ -229,8 +234,3 @@ jobs:
           tag: ${{ steps.device_name.outputs.prop }}-${{ steps.build_no.outputs.prop }}
           file_glob: true
           overwrite: true
-          
-          
-        
-      
-      
