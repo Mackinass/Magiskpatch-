@@ -35,7 +35,12 @@ jobs:
 
     - name: Patch OTA with Magisk
       run: |
-        java -jar magisk/magisk.jar patch ota.zip
+        if [ -f magisk/magisk.jar ]; then
+          java -jar magisk/magisk.jar patch ota.zip
+        else
+          echo "magisk.jar not found"
+          exit 1
+        fi
 
     - name: Upload patched image
       uses: actions/upload-artifact@v3
