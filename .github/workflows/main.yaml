@@ -25,9 +25,13 @@ jobs:
       run: |
         wget -O magisk.apk https://github.com/topjohnwu/Magisk/releases/download/v28.1/Magisk-v28.1.apk
 
-    - name: Install Magisk
+    - name: Extract Magisk
       run: |
         unzip magisk.apk -d magisk
+
+    - name: List files in magisk directory
+      run: |
+        ls -la magisk
 
     - name: Patch OTA with Magisk
       run: |
