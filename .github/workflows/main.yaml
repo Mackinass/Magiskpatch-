@@ -31,7 +31,8 @@ jobs:
 
     - name: List files in magisk directory
       run: |
-        ls -la magisk
+        ls -la magisk 
+        magiskboot patch boot.img
 
     - name: Upload patched image
       uses: actions/upload-artifact@v3
